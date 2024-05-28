@@ -39,20 +39,35 @@ self.addEventListener('fetch', async function (event) {
   //       fetch(event.request)
   // https://developer.chrome.com/docs/workbox/caching-strategies-overview/
   /*******************************/
-  // B7. TODO - Respond to the event by opening the cache using the name we gave
+  // B 7. TODO - Respond to the event by opening the cache using the name we gave
   //            above (CACHE_NAME)
-  let openCache = await caches.open(CACHE_NAME);
+  //let openCache = await caches.open(CACHE_NAME);
   // B8. TODO - If the request is in the cache, return with the cached version.
   //            Otherwise fetch the resource, add it to the cache, and return
   //            network response.
-  let matchResponse = caches.match(event.request);
-  if (matchResponse) {
-    return matchResponse;
-  }
-  else {
-    let fetchResponse = await fetch(event.request);
-    await cache.put(event.request, fetchResponse.clone());
-    return fetchResponse;
+  // let matchResponse = caches.match(event.request);
+  // if (matchResponse) {
+  //   return matchResponse;
+  // }
+  // else {
+  //   let fetchResponse = await fetch(event.request);
+  //   await cache.put(event.request, fetchResponse.clone());
+  //   return fetchResponse;
 
-  }
+    // Open the cache
+    event.respondWith(caches.open(CACHE_NAME).then((cache) => {
+      // Respond with the image from the cache or from the network
+      return cache.match(event.request).then((cachedResponse) => {
+        return cachedResponse || fetch(event.request).then((fetchedResponse) => {
+          // Add the network response to the cache for future visits.
+          // Note: we need to make a copy of the response to save it in
+          // the cache and use the original as the request response.
+          cache.put(event.request, fetchedResponse.clone());
+
+          // Return the network response
+          return fetchedResponse;
+        });
+      });
+  }));
+  // }
 });
